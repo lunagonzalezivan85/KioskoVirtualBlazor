@@ -1,0 +1,129 @@
+@page "/branches"
+@inherits PageBase
+@inject IBranchService BranchService
+
+<PageTitle>Sucursales - Restaurant Management System</PageTitle>
+
+<h1 class="mt-4">Sucursales</h1>
+<ol class="breadcrumb mb-4">
+    <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+    <li class="breadcrumb-item active">Sucursales</li>
+</ol>
+
+<div class="mb-4">
+    <button class="btn btn-primary" @onclick="() => NavigateTo("/branches/register")">
+        <i class="fas fa-plus"></i> Nueva Sucursal
+    </button>
+    <div class="btn-group ms-2">
+        <button class="btn @(_viewType == "table" ? "btn-primary" : "btn-outline-primary")" 
+                @onclick="() => _viewType = "table"">
+            <i class="fas fa-table"></i>
+        </button>
+        <button class="btn @(_viewType == "card" ? "btn-primary" : "btn-outline-primary")" 
+                @onclick="() => _viewType = "card"">
+            <i class="fas fa-th-large"></i>
+        </button>
+    </div>
+</div>
+
+@if (_branches == null)
+{
+    <div class="text-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+    </div>
+}
+else if (_viewType == "table")
+{
+    <DataTable TItem="BranchDto"
+               Title="Lista de Sucursales"
+               IconClass="fas fa-store"
+               Items="_branches"
+               AllowAdd="false"
+               OnEditClick="@(async (item) => await OnEditBranch(item))"
+               OnDeleteClick="@(async (item) => await OnDeleteBranch(item))">
+        <HeaderTemplate>
+            <th>Nombre</th>
+            <th>Dirección</th>
+            <th>Contacto</th>
+            <th>Estado</th>
+            <th>Creado</th>
+        </HeaderTemplate>
+        <RowTemplate Context="branch">
+            <td>@branch.Name</td>
+            <td>@branch.Address</td>
+            <td>@branch.ContactInfo</td>
+            <td>
+                <span class="badge bg-@(branch.IsActive ? "success" : "danger")">
+                    @(branch.IsActive ? "Activo" : "Inactivo")
+                </span>
+            </td>
+            <td>@branch.CreatedAt.ToString("dd/MM/yyyy")</td>
+        </RowTemplate>
+    </DataTable>
+}
+else
+{
+    <DataCard TItem="BranchDto"
+             Items="_branches"
+             OnEditClick="@(async (item) => await OnEditBranch(item))"
+             OnDeleteClick="@(async (item) => await OnDeleteBranch(item))">
+        <HeaderTemplate Context="branch">
+            @branch.Name
+        </HeaderTemplate>
+        <BodyTemplate Context="branch">
+            <div class="mb-2">
+                <i class="fas fa-map-marker-alt me-2"></i>
+                @branch.Address
+            </div>
+            <div class="mb-2">
+                <i class="fas fa-phone me-2"></i>
+                @branch.ContactInfo
+            </div>
+            <div>
+                <span class="badge bg-@(branch.IsActive ? "success" : "danger")">
+                    @(branch.IsActive ? "Activo" : "Inactivo")
+                </span>
+            </div>
+        </BodyTemplate>
+        <FooterTemplate Context="branch">
+            <small class="text-muted">
+                Creado el @branch.CreatedAt.ToString("dd/MM/yyyy")
+            </small>
+        </FooterTemplate>
+    </DataCard>
+}
+
+@code {
+    private List<BranchDto> _branches;
+    private string _viewType = "table";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var branches = await BranchService.GetAllBranchesAsync();
+        _branches = branches.ToList();
+    }
+
+    private async Task OnEditBranch(BranchDto branch)
+    {
+        NavigateTo($"/branches/register/{branch.BranchId}");
+    }
+
+    private async Task OnDeleteBranch(BranchDto branch)
+    {
+        if (await ConfirmAction($"¿Está seguro que desea eliminar la sucursal {branch.Name}?"))
+        {
+            try
+            {
+                await BranchService.DeleteBranchAsync(branch.BranchId);
+                _branches.Remove(branch);
+                await ShowToast("Sucursal eliminada correctamente");
+            }
+            catch (Exception ex)
+            {
+                await ShowToast("Error al eliminar la sucursal", "error");
+            }
+        }
+    }
+}

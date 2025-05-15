@@ -1,0 +1,153 @@
+@page "/menu-items"
+@inherits PageBase
+@inject IMenuService MenuService
+
+<PageTitle>Ítems del Menú - Restaurant Management System</PageTitle>
+
+<h1 class="mt-4">Ítems del Menú</h1>
+<ol class="breadcrumb mb-4">
+    <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+    <li class="breadcrumb-item active">Ítems del Menú</li>
+</ol>
+
+<div class="mb-4">
+    <button class="btn btn-primary" @onclick="() => NavigateTo("/menu-items/register")">
+        <i class="fas fa-plus"></i> Nuevo Ítem
+    </button>
+    <div class="btn-group ms-2">
+        <button class="btn @(_viewType == "table" ? "btn-primary" : "btn-outline-primary")" 
+                @onclick="() => _viewType = "table"">
+            <i class="fas fa-table"></i>
+        </button>
+        <button class="btn @(_viewType == "card" ? "btn-primary" : "btn-outline-primary")" 
+                @onclick="() => _viewType = "card"">
+            <i class="fas fa-th-large"></i>
+        </button>
+    </div>
+</div>
+
+@if (_menuItems == null)
+{
+    <div class="text-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+    </div>
+}
+else if (_viewType == "table")
+{
+    <DataTable TItem="MenuItemDto"
+               Title="Lista de Ítems"
+               IconClass="fas fa-utensils"
+               Items="_menuItems"
+               AllowAdd="false"
+               OnEditClick="@(async (item) => await OnEditMenuItem(item))"
+               OnDeleteClick="@(async (item) => await OnDeleteMenuItem(item))">
+        <HeaderTemplate>
+            <th>Imagen</th>
+            <th>Nombre</th>
+            <th>Categoría</th>
+            <th>Precio</th>
+            <th>Estado</th>
+        </HeaderTemplate>
+        <RowTemplate Context="item">
+            <td>
+                @if (!string.IsNullOrEmpty(item.ImageUrl))
+                {
+                    <img src="@item.ImageUrl" alt="@item.Name" style="height: 40px; width: 40px; object-fit: cover;" />
+                }
+                else
+                {
+                    <i class="fas fa-image text-muted"></i>
+                }
+            </td>
+            <td>@item.Name</td>
+            <td>@item.CategoryName</td>
+            <td>@FormatCurrency(item.Price)</td>
+            <td>
+                <span class="badge bg-@(item.IsAvailable ? "success" : "danger")">
+                    @(item.IsAvailable ? "Disponible" : "No Disponible")
+                </span>
+            </td>
+        </RowTemplate>
+    </DataTable>
+}
+else
+{
+    <DataCard TItem="MenuItemDto"
+             Items="_menuItems"
+             CardBorderClass="success"
+             OnEditClick="@(async (item) => await OnEditMenuItem(item))"
+             OnDeleteClick="@(async (item) => await OnDeleteMenuItem(item))">
+        <HeaderTemplate Context="item">
+            @item.Name
+        </HeaderTemplate>
+        <BodyTemplate Context="item">
+            <div class="text-center mb-3">
+                @if (!string.IsNullOrEmpty(item.ImageUrl))
+                {
+                    <img src="@item.ImageUrl" alt="@item.Name" 
+                         style="height: 120px; width: 120px; object-fit: cover;" 
+                         class="rounded-circle" />
+                }
+                else
+                {
+                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center" 
+                         style="height: 120px; width: 120px;">
+                        <i class="fas fa-image fa-3x text-muted"></i>
+                    </div>
+                }
+            </div>
+            <div class="mb-2">
+                <span class="badge bg-info">@item.CategoryName</span>
+            </div>
+            <div class="mb-2">
+                <h4 class="mb-0">@FormatCurrency(item.Price)</h4>
+            </div>
+            @if (!string.IsNullOrEmpty(item.Description))
+            {
+                <div class="mb-2 small text-muted">
+                    @item.Description
+                </div>
+            }
+            <div>
+                <span class="badge bg-@(item.IsAvailable ? "success" : "danger")">
+                    @(item.IsAvailable ? "Disponible" : "No Disponible")
+                </span>
+            </div>
+        </BodyTemplate>
+    </DataCard>
+}
+
+@code {
+    private List<MenuItemDto> _menuItems;
+    private string _viewType = "table";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var items = await MenuService.GetAllMenuItemsAsync();
+        _menuItems = items.OrderBy(i => i.CategoryName).ThenBy(i => i.Name).ToList();
+    }
+
+    private async Task OnEditMenuItem(MenuItemDto item)
+    {
+        NavigateTo($"/menu-items/register/{item.MenuItemId}");
+    }
+
+    private async Task OnDeleteMenuItem(MenuItemDto item)
+    {
+        if (await ConfirmAction($"¿Está seguro que desea eliminar el ítem {item.Name}?"))
+        {
+            try
+            {
+                await MenuService.DeleteMenuItemAsync(item.MenuItemId);
+                _menuItems.Remove(item);
+                await ShowToast("Ítem eliminado correctamente");
+            }
+            catch (Exception ex)
+            {
+                await ShowToast("Error al eliminar el ítem", "error");
+            }
+        }
+    }
+}

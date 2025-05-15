@@ -1,0 +1,124 @@
+@page "/branches/register"
+@page "/branches/register/{Id:int}"
+@inherits PageBase
+@inject IBranchService BranchService
+
+<PageTitle>@(_isEditing ? "Editar" : "Nueva") Sucursal - Restaurant Management System</PageTitle>
+
+<h1 class="mt-4">@(_isEditing ? "Editar" : "Nueva") Sucursal</h1>
+<ol class="breadcrumb mb-4">
+    <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+    <li class="breadcrumb-item"><a href="/branches">Sucursales</a></li>
+    <li class="breadcrumb-item active">@(_isEditing ? "Editar" : "Nueva")</li>
+</ol>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-store me-1"></i>
+                Información de la Sucursal
+            </div>
+            <div class="card-body">
+                <EditForm Model="@_model" OnValidSubmit="HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    <div class="mb-3">
+                        <label class="form-label">Nombre</label>
+                        <InputText @bind-Value="_model.Name" class="form-control" />
+                        <ValidationMessage For="@(() => _model.Name)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Dirección</label>
+                        <InputTextArea @bind-Value="_model.Address" class="form-control" rows="3" />
+                        <ValidationMessage For="@(() => _model.Address)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Información de Contacto</label>
+                        <InputText @bind-Value="_model.ContactInfo" class="form-control" />
+                        <ValidationMessage For="@(() => _model.ContactInfo)" />
+                    </div>
+
+                    @if (_isEditing)
+                    {
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <InputCheckbox @bind-Value="_model.IsActive" class="form-check-input" />
+                                <label class="form-check-label">Activo</label>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="button" class="btn btn-secondary" @onclick="() => NavigateTo("/branches")">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            @(_isEditing ? "Actualizar" : "Crear")
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private bool _isEditing => Id.HasValue;
+    private UpdateBranchDto _model = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_isEditing)
+        {
+            var branch = await BranchService.GetBranchByIdAsync(Id.Value);
+            if (branch != null)
+            {
+                _model = new UpdateBranchDto
+                {
+                    BranchId = branch.BranchId,
+                    Name = branch.Name,
+                    Address = branch.Address,
+                    ContactInfo = branch.ContactInfo,
+                    IsActive = branch.IsActive
+                };
+            }
+            else
+            {
+                NavigateTo("/branches");
+                await ShowToast("Sucursal no encontrada", "error");
+            }
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            if (_isEditing)
+            {
+                await BranchService.UpdateBranchAsync(_model);
+                await ShowToast("Sucursal actualizada correctamente");
+            }
+            else
+            {
+                var createDto = new CreateBranchDto
+                {
+                    Name = _model.Name,
+                    Address = _model.Address,
+                    ContactInfo = _model.ContactInfo
+                };
+                await BranchService.CreateBranchAsync(createDto);
+                await ShowToast("Sucursal creada correctamente");
+            }
+            NavigateTo("/branches");
+        }
+        catch (Exception ex)
+        {
+            await ShowToast($"Error al {(_isEditing ? "actualizar" : "crear")} la sucursal", "error");
+        }
+    }
+}

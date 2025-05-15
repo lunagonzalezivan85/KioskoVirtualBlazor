@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "dgSpecHash": "r9zZ+k0vySgXDwCQmxmqHvOsXZGqEwWd9wYuJ4R+lgB+ovPQPhptNjsZKl8swrXwdvWb+APP5811fgoyXpDFPw==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\ILUNA\\CascadeProjects\\RestaurantManagementSystem\\src\\Core\\Application\\Core.Application.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\ILUNA\\.nuget\\packages\\automapper\\12.0.1\\automapper.12.0.1.nupkg.sha512",
+    "C:\\Users\\ILUNA\\.nuget\\packages\\automapper.collection\\9.0.0\\automapper.collection.9.0.0.nupkg.sha512",
+    "C:\\Users\\ILUNA\\.nuget\\packages\\fluentvalidation\\11.5.1\\fluentvalidation.11.5.1.nupkg.sha512",
+    "C:\\Users\\ILUNA\\.nuget\\packages\\microsoft.csharp\\4.7.0\\microsoft.csharp.4.7.0.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,0 +1,122 @@
+@page "/categories"
+@inherits PageBase
+@inject IMenuService MenuService
+
+<PageTitle>Categorías - Restaurant Management System</PageTitle>
+
+<h1 class="mt-4">Categorías del Menú</h1>
+<ol class="breadcrumb mb-4">
+    <li class="breadcrumb-item"><a href="/">Dashboard</a></li>
+    <li class="breadcrumb-item active">Categorías</li>
+</ol>
+
+<div class="mb-4">
+    <button class="btn btn-primary" @onclick="() => NavigateTo("/categories/register")">
+        <i class="fas fa-plus"></i> Nueva Categoría
+    </button>
+    <div class="btn-group ms-2">
+        <button class="btn @(_viewType == "table" ? "btn-primary" : "btn-outline-primary")" 
+                @onclick="() => _viewType = "table"">
+            <i class="fas fa-table"></i>
+        </button>
+        <button class="btn @(_viewType == "card" ? "btn-primary" : "btn-outline-primary")" 
+                @onclick="() => _viewType = "card"">
+            <i class="fas fa-th-large"></i>
+        </button>
+    </div>
+</div>
+
+@if (_categories == null)
+{
+    <div class="text-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+    </div>
+}
+else if (_viewType == "table")
+{
+    <DataTable TItem="MenuCategoryDto"
+               Title="Lista de Categorías"
+               IconClass="fas fa-list"
+               Items="_categories"
+               AllowAdd="false"
+               OnEditClick="@(async (item) => await OnEditCategory(item))"
+               OnDeleteClick="@(async (item) => await OnDeleteCategory(item))">
+        <HeaderTemplate>
+            <th>Nombre</th>
+            <th>Descripción</th>
+            <th>Orden</th>
+            <th>Estado</th>
+        </HeaderTemplate>
+        <RowTemplate Context="category">
+            <td>@category.Name</td>
+            <td>@category.Description</td>
+            <td>@category.DisplayOrder</td>
+            <td>
+                <span class="badge bg-@(category.IsActive ? "success" : "danger")">
+                    @(category.IsActive ? "Activo" : "Inactivo")
+                </span>
+            </td>
+        </RowTemplate>
+    </DataTable>
+}
+else
+{
+    <DataCard TItem="MenuCategoryDto"
+             Items="_categories"
+             OnEditClick="@(async (item) => await OnEditCategory(item))"
+             OnDeleteClick="@(async (item) => await OnDeleteCategory(item))">
+        <HeaderTemplate Context="category">
+            @category.Name
+        </HeaderTemplate>
+        <BodyTemplate Context="category">
+            <div class="mb-2">
+                @category.Description
+            </div>
+            <div class="mb-2">
+                <small class="text-muted">
+                    Orden de visualización: @category.DisplayOrder
+                </small>
+            </div>
+            <div>
+                <span class="badge bg-@(category.IsActive ? "success" : "danger")">
+                    @(category.IsActive ? "Activo" : "Inactivo")
+                </span>
+            </div>
+        </BodyTemplate>
+    </DataCard>
+}
+
+@code {
+    private List<MenuCategoryDto> _categories;
+    private string _viewType = "table";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var categories = await MenuService.GetAllCategoriesAsync();
+        _categories = categories.OrderBy(c => c.DisplayOrder).ToList();
+    }
+
+    private async Task OnEditCategory(MenuCategoryDto category)
+    {
+        NavigateTo($"/categories/register/{category.CategoryId}");
+    }
+
+    private async Task OnDeleteCategory(MenuCategoryDto category)
+    {
+        if (await ConfirmAction($"¿Está seguro que desea eliminar la categoría {category.Name}?"))
+        {
+            try
+            {
+                // TODO: Implementar eliminación de categoría
+                _categories.Remove(category);
+                await ShowToast("Categoría eliminada correctamente");
+            }
+            catch (Exception ex)
+            {
+                await ShowToast("Error al eliminar la categoría", "error");
+            }
+        }
+    }
+}

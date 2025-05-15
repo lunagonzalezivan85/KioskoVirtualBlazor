@@ -1,0 +1,67 @@
+@typeparam TItem
+@inherits PageBase
+
+<div class="row">
+    @foreach (var item in Items)
+    {
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card h-100 border-start-@CardBorderClass shadow">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="text-primary fw-bold text-uppercase">
+                            @HeaderTemplate(item)
+                        </div>
+                        @if (AllowActions)
+                        {
+                            <div class="dropdown">
+                                <button class="btn btn-link" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    @if (AllowEdit)
+                                    {
+                                        <li>
+                                            <button class="dropdown-item" @onclick="() => OnEditClick.InvokeAsync(item)">
+                                                <i class="fas fa-edit me-2"></i> Editar
+                                            </button>
+                                        </li>
+                                    }
+                                    @if (AllowDelete)
+                                    {
+                                        <li>
+                                            <button class="dropdown-item text-danger" @onclick="() => OnDeleteClick.InvokeAsync(item)">
+                                                <i class="fas fa-trash me-2"></i> Eliminar
+                                            </button>
+                                        </li>
+                                    }
+                                    @ActionsTemplate(item)
+                                </ul>
+                            </div>
+                        }
+                    </div>
+                    @BodyTemplate(item)
+                </div>
+                @if (FooterTemplate != null)
+                {
+                    <div class="card-footer">
+                        @FooterTemplate(item)
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public IEnumerable<TItem> Items { get; set; }
+    [Parameter] public string CardBorderClass { get; set; } = "primary";
+    [Parameter] public bool AllowActions { get; set; } = true;
+    [Parameter] public bool AllowEdit { get; set; } = true;
+    [Parameter] public bool AllowDelete { get; set; } = true;
+    [Parameter] public EventCallback<TItem> OnEditClick { get; set; }
+    [Parameter] public EventCallback<TItem> OnDeleteClick { get; set; }
+    [Parameter] public RenderFragment<TItem> HeaderTemplate { get; set; }
+    [Parameter] public RenderFragment<TItem> BodyTemplate { get; set; }
+    [Parameter] public RenderFragment<TItem> FooterTemplate { get; set; }
+    [Parameter] public RenderFragment<TItem> ActionsTemplate { get; set; }
+}
